@@ -1,0 +1,36 @@
+name: Hourly Air Quality ETL
+
+# Run this workflow on a schedule
+on:
+  schedule:
+    # This cron syntax means "At minute 0 past every hour"
+    - cron: '0 * * * *'
+  # Also allow running it manually (for testing)
+  workflow_dispatch:
+
+jobs:
+  run_pipeline:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Download the code from the repository
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 2. Install Python
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      # 3. Install the required libraries (requests, pandas, etc.)
+      - name: Install dependencies
+        run: |
+          pip install requests psycopg2-binary pandas
+
+      # 4. Run the ETL script (Using the Secrets)
+      - name: Run ETL Script
+        env:
+          API_KEY: ${{ secrets.API_KEY }}
+          DB_URI: ${{ secrets.DB_URI }}
+        run: python fetch_data.py
