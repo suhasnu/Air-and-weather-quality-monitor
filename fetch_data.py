@@ -15,12 +15,20 @@ if not API_KEY or not DB_URI:
     print("Error: Missing Environment Variables. Are they set in GitHub Secrets?")
     sys.exit(1)
     
-# Cities to monitor
+# Cities to monitor (added new cities)
 CITIES = [
     {"name": "Berlin", "lat": 52.520, "lon": 13.405},
     {"name": "Fulda", "lat": 50.551, "lon": 9.675},
     {"name": "Frankfurt", "lat": 50.110, "lon": 8.682},
-    {"name": "Munich", "lat": 48.135, "lon": 11.582}
+    {"name": "Munich", "lat": 48.135, "lon": 11.582},
+    {"name": "Stuttgart", "lat": 48.775, "lon": 9.182},
+    {"name": "Heidelberg", "lat": 49.398, "lon": 8.672},
+    {"name": "Kassel", "lat": 51.312, "lon": 9.479},
+    {"name": "Hamburg", "lat": 53.551, "lon": 9.993},
+    {"name": "Hannover", "lat": 52.375, "lon": 9.732},
+    {"name": "Cologne", "lat": 50.937, "lon": 6.960},
+    {"name": "Bengaluru", "lat": 12.971, "lon": 77.594},
+    {"name": "Pune", "lat": 18.520, "lon": 73.856}
 ]
 
 def create_table_if_not_exists():
