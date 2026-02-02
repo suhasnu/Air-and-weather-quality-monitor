@@ -11,6 +11,22 @@ st.set_page_config(page_title="UrbanAir Live Monitor", layout="wide")
 # (We use the URI you confirmed works)
 DB_URI = "postgresql://postgres.smdsanxatzeejkwtkncn:UrbanAir2026@aws-1-eu-west-1.pooler.supabase.com:5432/postgres"
 
+# Coordinates for the Map (Latitude, Longitude)
+CITY_COORDINATES = {
+    "Berlin": [52.520, 13.405],
+    "Fulda": [50.551, 9.675],
+    "Frankfurt": [50.110, 8.682],
+    "Munich": [48.135, 11.582],
+    "Stuttgart": [48.775, 9.182],
+    "Heidelberg": [49.398, 8.672],
+    "Kassel": [51.312, 9.479],
+    "Hamburg": [53.551, 9.993],
+    "Hannover": [52.375, 9.732],
+    "Cologne": [50.937, 6.960],
+    "Bengaluru": [12.971, 77.594],
+    "Pune": [18.520, 73.856]
+}
+
 @st.cache_data(ttl=60) 
 def load_data():
     try:
@@ -68,6 +84,38 @@ if not df_filtered.empty:
     col2.metric("Current AQI", latest['aqi'])
     col3.metric("PM2.5 Level", f"{latest['pm2_5']} µg/m³")
     col4.metric("Last Updated", str(latest['timestamp'])[11:16])
+    
+    # --- NEW: MAP SECTION ---
+    st.subheader("🗺️ Live Pollution Map")
+    
+    # Logic: Get the latest row for each city to show on map
+    if selected_city == "All Cities":
+        map_df = df.sort_values('timestamp', ascending=False).groupby('city').head(1).copy()
+        zoom_level = 4
+    else:
+        # If one city is selected, just show that one dot
+        map_df = df_filtered.sort_values('timestamp', ascending=False).head(1).copy()
+        zoom_level = 8
+
+    # Add Lat/Lon to the data so Plotly knows where to put the dots
+    map_df['lat'] = map_df['city'].map(lambda x: CITY_COORDINATES.get(x, [0,0])[0])
+    map_df['lon'] = map_df['city'].map(lambda x: CITY_COORDINATES.get(x, [0,0])[1])
+
+    # Draw the Map
+    fig_map = px.scatter_mapbox(
+        map_df, 
+        lat="lat", 
+        lon="lon", 
+        color="aqi",           
+        size="pm2_5", 
+        size_max=20,         
+        hover_name="city", 
+        hover_data=["pm2_5", "temperature"],
+        zoom=zoom_level, 
+        mapbox_style="open-street-map",
+        height=400
+    )
+    st.plotly_chart(fig_map, use_container_width=True)
 
     # Charts
     st.subheader(f"📉 Pollution Trends: {selected_city}")
