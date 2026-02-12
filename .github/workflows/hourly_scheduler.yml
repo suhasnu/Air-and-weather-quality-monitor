@@ -1,34 +1,35 @@
 name: Hourly Air Quality ETL
 
-# Run this workflow on a schedule
+# This section controls WHEN the robot runs
 on:
   schedule:
-    # This cron syntax means "At minute 0 past every hour"
+    # "cron" is a time syntax. '0 * * * *' means "Run at minute 0 of every hour"
     - cron: '0 * * * *'
-  # Also allow running it manually (for testing)
+  # This allows us to click the "Run Now" button manually for testing
   workflow_dispatch:
 
 jobs:
   run_pipeline:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  # We ask GitHub for a free Linux server
 
     steps:
-      # 1. Download the code from the repository
+      # Step 1: Download our code from the repository
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2. Install Python
+      # Step 2: Install Python on the server
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
-      # 3. Install the required libraries (requests, pandas, etc.)
+      # Step 3: Install the libraries our script needs (Pandas, Requests, etc.)
       - name: Install dependencies
         run: |
           pip install requests psycopg2-binary pandas
 
-      # 4. Run the ETL script (Using the Secrets)
+      # Step 4: Run the Python script
+      # IMPORTANT: We inject the passwords (Secrets) here so the script can use them
       - name: Run ETL Script
         env:
           API_KEY: ${{ secrets.API_KEY }}

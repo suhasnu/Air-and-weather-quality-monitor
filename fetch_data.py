@@ -5,17 +5,17 @@ import sys
 from datetime import datetime
 
 # --- CONFIGURATION ---
-# "os.getenv" tells the script to look for these secret keys inside GitHub's settings
-# instead of reading them from this file.
+# We use os.getenv so we don't expose our passwords in the code.
+# These are set in the "Settings > Secrets" tab on GitHub.
 API_KEY = os.getenv("API_KEY")
 DB_URI = os.getenv("DB_URI")
 
-# Safety Check: If keys are missing, stop the script
+# Safety check: Stop the script immediately if the keys are missing.
 if not API_KEY or not DB_URI:
     print("Error: Missing Environment Variables. Are they set in GitHub Secrets?")
     sys.exit(1)
     
-# Cities to monitor (added new cities)
+# Our list of targets: We need manual coordinates because the API requires them.
 CITIES = [
     {"name": "Berlin", "lat": 52.520, "lon": 13.405},
     {"name": "Fulda", "lat": 50.551, "lon": 9.675},
@@ -32,7 +32,7 @@ CITIES = [
 ]
 
 def create_table_if_not_exists():
-    """Creates the table automatically if it doesn't exist."""
+    """Checks if the table exists in Supabase. If not, it builds it automatically."""
     commands = """
         CREATE TABLE IF NOT EXISTS air_quality_logs (
             id SERIAL PRIMARY KEY,
@@ -54,20 +54,22 @@ def create_table_if_not_exists():
         conn.close()
         print("Table check successful.")
     except Exception as e:
+        # If we can't connect to the DB, there is no point in continuing.
         print(f"Critical Database Error: {e}")
-        sys.exit(1) # Stop script if DB fails
+        sys.exit(1)
 
 def fetch_data(city):
-    """Hits the API for a single city."""
+    """Hits the OpenWeatherMap API to get the latest stats for a specific city."""
+    # URL 1: For Pollution (PM2.5, CO, etc.)
     url = f"http://api.openweathermap.org/data/2.5/air_pollution?lat={city['lat']}&lon={city['lon']}&appid={API_KEY}"
+    # URL 2: For Weather (Temperature)
     weather_url = f"https://api.openweathermap.org/data/2.5/weather?lat={city['lat']}&lon={city['lon']}&appid={API_KEY}&units=metric"
     
     try:
-        # Get Air Quality
         aq_res = requests.get(url).json()
-        # Get Weather (for Temp)
         w_res = requests.get(weather_url).json()
         
+        # Clean up the messy API response and return just what we need
         return {
             "city": city['name'],
             "aqi": aq_res['list'][0]['main']['aqi'],
@@ -81,7 +83,7 @@ def fetch_data(city):
         return None
 
 def save_to_db(data):
-    """Inserts one row of data into Supabase."""
+    """Takes the cleaned data and inserts a new row into Supabase."""
     sql = """
     INSERT INTO air_quality_logs (city, aqi, pm2_5, pm10, co, temperature)
     VALUES (%s, %s, %s, %s, %s, %s)
@@ -89,6 +91,7 @@ def save_to_db(data):
     try:
         conn = psycopg2.connect(DB_URI)
         cur = conn.cursor()
+        # We use a tuple here to prevent SQL Injection attacks
         cur.execute(sql, (data['city'], data['aqi'], data['pm2_5'], data['pm10'], data['co'], data['temperature']))
         conn.commit()
         cur.close()
@@ -100,10 +103,10 @@ def save_to_db(data):
 def main():
     print(f"--- ETL JOB STARTED AT {datetime.now()} ---")
     
-    # 1. Setup DB
+    # Step 1: Ensure the database is ready
     create_table_if_not_exists()
     
-    # 2. Loop through cities
+    # Step 2: Loop through every city and fetch data
     for city in CITIES:
         data = fetch_data(city)
         if data:
