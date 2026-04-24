@@ -84,6 +84,7 @@ def fetch_data(city):
 
 def save_to_db(data):
     """Takes the cleaned data and inserts a new row into Supabase."""
+    
     sql = """
     INSERT INTO air_quality_logs (city, aqi, pm2_5, pm10, co, temperature)
     VALUES (%s, %s, %s, %s, %s, %s)
