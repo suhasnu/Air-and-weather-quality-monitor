@@ -1,6 +1,6 @@
 # 🌍 Air & Weather Quality Monitor: Automated ETL Pipeline
 
-**Author:** `Suhas Nandihalli Umesh` & `Abhimanyu Kanase`
+**Author:** `Suhas Nandihalli Umesh`
 
 **Date:** February 2026  
 **License:** MIT License  
